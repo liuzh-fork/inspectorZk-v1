@@ -29,7 +29,7 @@
             <ComboBox fx:id="previousHostsComboBox" onAction="#previousHostBoxAction" prefHeight="27.0" prefWidth="332.0" promptText="Previous Hosts..." HBox.hgrow="ALWAYS" />
          </children>
       </HBox>
-      <HBox prefHeight="100.0" prefWidth="200.0">
+      <HBox fillHeight="false" prefHeight="44.0" prefWidth="400.0">
          <children>
             <Label prefHeight="35.0" prefWidth="36.0" text="Type:">
                <font>

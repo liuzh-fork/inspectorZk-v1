@@ -10,6 +10,7 @@ import javafx.fxml.FXML;
 import javafx.scene.Parent;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
+import javafx.scene.control.SingleSelectionModel;
 import javafx.scene.control.TextField;
 import javafx.scene.text.Text;
 
@@ -44,6 +45,9 @@ public class OpenConnectionController {
 	@FXML
 	private ComboBox<String> previousHostsComboBox;
 
+	@FXML
+	private ComboBox<String> hostType;
+
 	private ZKService zkService;
 	private Session session;
 
@@ -51,7 +55,6 @@ public class OpenConnectionController {
 	private void initialize(){
 		log.debug("Initializing OpenConnectionController...");
 		session = Session.getSession();
-		zkService = ZKService.getInstance();
 
 		loadPreviousHostsList();
 	}
@@ -62,6 +65,9 @@ public class OpenConnectionController {
 
 		if(validate()){
 			ZKConnInfo ci = new ZKConnInfo(hostTextField.textProperty().get(), Integer.valueOf(portTextField.textProperty().get()));
+			String hostType = this.hostType.getSelectionModel().getSelectedItem();
+			ZKService.init(hostType);
+			zkService = ZKService.getInstance();
 			session.setAttribute("ci", ci);
 
 			MainController.changeToWaitCursor();

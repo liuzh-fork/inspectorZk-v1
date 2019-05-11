@@ -18,6 +18,10 @@ public interface ZKService {
         return Singleton.getInstance();
     }
 
+    static void init(String type){
+        Singleton.init(type);
+    }
+
     class Singleton {
         static volatile ZKService instance;
 
@@ -37,6 +41,14 @@ public interface ZKService {
                 }
             }
             return instance;
+        }
+
+        static void init(String type) {
+            if ("default".equals(type)) {
+                instance = new ZKServiceImpl();
+            } else {
+                instance = new CuratorZKService();
+            }
         }
     }
 

@@ -3,7 +3,7 @@ package com.migs.zk.inspectorzk.services;
 /**
  * Created by: mig.c on 1/10/18.
  */
-public class ZKDataException extends Exception {
+public class ZKDataException extends RuntimeException {
 
     public ZKDataException(String message) {
         super(message);

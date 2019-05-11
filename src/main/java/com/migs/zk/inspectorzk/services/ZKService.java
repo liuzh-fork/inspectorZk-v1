@@ -5,6 +5,7 @@ import com.migs.zk.inspectorzk.util.ZKUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.zookeeper.CreateMode;
+import org.apache.zookeeper.KeeperException;
 import org.apache.zookeeper.ZooDefs;
 import org.apache.zookeeper.ZooKeeper;
 import org.apache.zookeeper.data.ACL;
@@ -21,23 +22,23 @@ public class ZKService {
 
     private static Logger log = LogManager.getLogger(ZKService.class);
 
-	private static ZKService instance;
+    private static ZKService instance;
     private static final int ANY_NODE_VERSION = -1;
 
-	private static ZKConnection zcon;
+    private static ZKConnection zcon;
     private static ZKConnInfo ci;
 
-    private ZKService(){
+    private ZKService() {
         zcon = new ZKConnection();
     }
 
-    private static synchronized void instantiate(){
-        if(instance == null)
+    private static synchronized void instantiate() {
+        if (instance == null)
             instance = new ZKService();
     }
 
-    public static ZKService getInstance(){
-        if(instance == null)
+    public static ZKService getInstance() {
+        if (instance == null)
             instantiate();
 
         return instance;
@@ -55,26 +56,26 @@ public class ZKService {
         return zcon.isConnected();
     }
 
-    public ZKDataResult getZNodeData(String path) throws ZKDataException{
+    public ZKDataResult getZNodeData(String path) throws ZKDataException {
         log.debug(String.format("Getting znode data for: %s\n", path));
 
         ZKDataResult dataResult = null;
         try {
             ZooKeeper zk = zcon.getZooKeeper(ci);
 
-            if(zk != null){
+            if (zk != null) {
                 Stat nodeStat = new Stat();
                 byte[] data = zk.getData(path, false, nodeStat);
 
-                log.debug("nodeStat = "+ nodeStat);
+                log.debug("nodeStat = " + nodeStat);
 
-                if(data != null){
+                if (data != null) {
                     dataResult = new ZKDataResult(new String(data, StandardCharsets.UTF_8).trim(), nodeStat);
                 }
             }
         } catch (Exception e) {
             String msg = "";
-            if(ZKUtils.isNoAuth(e.getMessage()))
+            if (ZKUtils.isNoAuth(e.getMessage()))
                 msg = String.format("Error: trying to get data for: %s due to: %s\nMight need to authenticate first (Menu -> Connection -> Auth)", path, e.getMessage());
             else
                 msg = String.format("Error: trying to get data for: %s due to: %s", path, e.getMessage());
@@ -90,17 +91,17 @@ public class ZKService {
             ZooKeeper zk = zcon.getZooKeeper(ci);
             Stat currNodeStat = zk.exists(path, null);
 
-            if(currNodeStat != null){
+            if (currNodeStat != null) {
                 int currVer = currNodeStat.getVersion();
                 Stat newStat = zk.setData(path, data.getBytes(), currVer);
-                log.debug("updated znode: "+ path);
+                log.debug("updated znode: " + path);
                 return newStat.getVersion() >= currVer;
             }
         } catch (Exception e) {
             e.printStackTrace();
             throw new ZKDataException(
-                String.format("Error setting data for: %s", path),
-                e
+                    String.format("Error setting data for: %s", path),
+                    e
             );
         }
         return false;
@@ -110,14 +111,14 @@ public class ZKService {
         try {
             ZooKeeper zk = zcon.getZooKeeper(ci);
 
-            if(zk != null){
+            if (zk != null) {
                 List<String> sortedChildren = zk.getChildren(path, false);
                 Collections.sort(sortedChildren);
                 return sortedChildren;
             }
         } catch (Exception e) {
             String msg = "";
-            if(ZKUtils.isNoAuth(e.getMessage()))
+            if (ZKUtils.isNoAuth(e.getMessage()))
                 msg = String.format("Error: trying to get children for: %s due to: %s\nMight need to authenticate first (Menu -> Connection -> Auth)", path, e.getMessage());
             else
                 msg = String.format("Error: trying to get children for: %s due to: %s", path, e.getMessage());
@@ -133,9 +134,9 @@ public class ZKService {
         return true;
     }
 
-    public void disconnectFromZK(){
+    public void disconnectFromZK() {
         try {
-            if(zcon != null)
+            if (zcon != null)
                 zcon.close();
         } catch (ZKConnectionException e) {
             e.printStackTrace();
@@ -150,8 +151,8 @@ public class ZKService {
 
             List<ACL> aclList = zk.getACL(path, null);
 
-            if(aclList != null)
-                aclList.forEach( acl -> aclMap.put(ZKUtils.parseAclId(acl.getId().getId()), acl) );
+            if (aclList != null)
+                aclList.forEach(acl -> aclMap.put(ZKUtils.parseAclId(acl.getId().getId()), acl));
         } catch (Exception e) {
             e.printStackTrace();
             throw new ZKDataException(String.format("Error getting ACL for: %s", path));
@@ -173,15 +174,15 @@ public class ZKService {
 
             ZooKeeper zk = zcon.getZooKeeper(ci);
 
-            if(zk != null){
+            if (zk != null) {
                 zk.setACL(path, new ArrayList<>(currentAcls.values()), -1);
                 log.debug("Perms Set");
                 return true;
             }
         } catch (Exception e) {
             throw new ZKDataException(
-                String.format("Error trying to set ACL for: %s | caused by: %s", path, e.getMessage()),
-                e
+                    String.format("Error trying to set ACL for: %s | caused by: %s", path, e.getMessage()),
+                    e
             );
         }
 
@@ -193,8 +194,8 @@ public class ZKService {
             int translatedPerms = ZKPerms.translatePerms(perms);
             log.debug(String.format("\nrolesStr: %s | translatedPerms = %d\n", perms.size(), translatedPerms));
 
-            if(zkSchemeDef == ZKSchemeDefs.DIGEST)
-                usrId +=":"+pw;
+            if (zkSchemeDef == ZKSchemeDefs.DIGEST)
+                usrId += ":" + pw;
 
             Id id = new Id(zkSchemeDef.getSchemeValue(), usrId);
             ACL acl = new ACL(translatedPerms, id);
@@ -204,31 +205,31 @@ public class ZKService {
 
             ZooKeeper zk = zcon.getZooKeeper(ci);
 
-            if(zk != null){
+            if (zk != null) {
                 zk.setACL(path, new ArrayList<>(currentAcls.values()), -1);
                 log.debug("Perms Set");
                 return true;
             }
         } catch (Exception e) {
-            throw new ZKDataException(e.getMessage(),e);
+            throw new ZKDataException(e.getMessage(), e);
         }
 
         return false;
     }
 
-    public boolean removeAclForZnode(String path, String usrId) throws ZKDataException{
+    public boolean removeAclForZnode(String path, String usrId) throws ZKDataException {
         boolean removed = false;
 
         Map<String, ACL> currentAcls = getAclMap(path);
 
-        if(currentAcls != null && !currentAcls.isEmpty()){
+        if (currentAcls != null && !currentAcls.isEmpty()) {
 
             Collection<ACL> aclList = currentAcls.values();
             Iterator<ACL> aclIterator = aclList.iterator();
 
-            while(aclIterator.hasNext()){
+            while (aclIterator.hasNext()) {
                 ZKAclData zkAclData = new ZKAclData(aclIterator.next());
-                if(zkAclData.getId().equals(usrId)){
+                if (zkAclData.getId().equals(usrId)) {
                     aclIterator.remove();
                 }
             }
@@ -236,12 +237,12 @@ public class ZKService {
             try {
                 ZooKeeper zk = zcon.getZooKeeper(ci);
 
-                if(zk != null){
+                if (zk != null) {
                     zk.setACL(path, new ArrayList<>(currentAcls.values()), -1);
                     removed = true;
                 }
             } catch (Exception e) {
-                log.error("Error removing ACL: "+ e.getMessage());
+                log.error("Error removing ACL: " + e.getMessage());
                 throw new ZKDataException("Error removing ACL", e);
             }
         }
@@ -253,13 +254,13 @@ public class ZKService {
         try {
             ZooKeeper zk = zcon.getZooKeeper(ci);
 
-            if(zk != null){
+            if (zk != null) {
                 String res = zk.create(path, data.getBytes(), ZooDefs.Ids.OPEN_ACL_UNSAFE, createMode);
-                log.debug("create res: "+ res);
+                log.debug("create res: " + res);
                 return true;
             }
         } catch (Exception e) {
-            if(e.getMessage().contains("NodeExists"))
+            if (e.getMessage().contains("NodeExists"))
                 log.error("ERROR: Node already exists\n");
             else
                 log.error(String.format("ERROR: %s", e.getMessage()));
@@ -278,4 +279,35 @@ public class ZKService {
             throw new ZKDataException(String.format("Error deleting node: %s | cause: %s", path, e.getMessage()));
         }
     }
+
+    public boolean deleteZnodeAndChildren(String path) throws ZKDataException {
+        try {
+            ZooKeeper zk = zcon.getZooKeeper(ci);
+            deleteAllByPath(zk, path);
+            log.debug(String.format("Znode deleted: %s\n", path));
+            return true;
+        } catch (Exception e) {
+            throw new ZKDataException(String.format("Error deleting node: %s | cause: %s", path, e.getMessage()));
+        }
+    }
+
+    public void deleteAllByPath(ZooKeeper zk, String path) throws ZKDataException {
+        try {
+            List<String> children = zk.getChildren(path, null);
+            if (children != null) {
+                children.forEach(childPath -> {
+                    childPath = path + (path.endsWith("/") ? "": "/") + childPath;
+                    log.info("childPath: " + childPath);
+                    deleteAllByPath(zk, childPath);
+                });
+            }
+            log.info("delete path: " + path);
+            zk.delete(path, ANY_NODE_VERSION);
+        } catch (KeeperException e) {
+            throw new ZKDataException(String.format("Error deleting node: %s | cause: %s", path, e.getMessage()));
+        } catch (InterruptedException e) {
+            throw new ZKDataException(String.format("Error deleting node: %s | cause: %s", path, e.getMessage()));
+        }
+    }
+
 }
